@@ -1203,7 +1203,12 @@ export class WasmEngine {
                     return "not-equal";
                 if (timeout !== undefined && timeout <= 0)
                     return "timed-out";
-                return "timed-out";
+                const deadline = timeout !== undefined ? Date.now() + timeout : Infinity;
+                while (Atomics.load(typedArray, index) === value) {
+                    if (Date.now() >= deadline)
+                        return "timed-out";
+                }
+                return "ok";
             },
             [Symbol.toStringTag]: "Atomics",
         };
