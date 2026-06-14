@@ -1,7 +1,7 @@
 /**
  * Shared type definitions for natsu-call.
  *
- * @author NatsuDev
+ * @author Natsu
  */
 /** Audio stream configuration reported by the WASM. */
 export type AudioConfig = {

@@ -5,7 +5,7 @@
  * stanzas, decrypts inbound ones, manages TC tokens, multi-device JID routing,
  * and signal-session refresh.
  *
- * @author NatsuDev
+ * @author Natsu
  */
 export type BaileysSocket = {
     authState: any;
