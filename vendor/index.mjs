@@ -74,6 +74,8 @@ export class ActiveCall extends EventEmitter {
     #ended = false;
     /** @internal mirrors the source path for the audio feeder */
     _audioSource = "silence";
+    /** @internal whether video is enabled */
+    _videoEnabled = false;
     constructor(callId, engine, durationMs) {
         super();
         this.callId = callId;
@@ -117,6 +119,12 @@ export class ActiveCall extends EventEmitter {
     };
     /** @internal */
     _emitAudio = (pcm) => { this.emit("audio", pcm); };
+    /** Feed a raw video frame to the encoder. */
+    sendVideoFrame = (frameBuffer, width, height, options = {}) => {
+        this.engine.sendVideoFrame(frameBuffer, width, height, options);
+    };
+    /** @internal */
+    _emitVideoFrame = (frame) => { this.emit("videoFrame", frame); };
     /** @internal */
     _forceEnd = (reason) => {
         if (this.#ended)
@@ -243,6 +251,7 @@ export class VoipClient {
                 onAudioCaptureStart: () => this.#handleAudioCaptureStart(),
                 onAudioCaptureStop: () => this.#handleAudioCaptureStop(),
                 onAudioPlaybackData: (audioData) => this.#activeCall?._emitAudio(audioData),
+                onVideoFrame: (frame) => this.#activeCall?._emitVideoFrame(frame),
                 cryptoHkdf: computeHkdf,
                 hmacSha256: computeHmacSha256,
             },
@@ -309,6 +318,8 @@ export class VoipClient {
             throw new Error(`Could not resolve LID for ${phoneNumber} (tried: ${jidCandidates.join(", ")})`);
         const durationMs = opts.durationMs ?? 120_000;
         const audioSource = opts.audioSource ?? "silence";
+        const isVideo = opts.isVideo ?? false;
+        const videoSource = opts.videoSource ?? null;
         for (const jid of [targetPnJid, peerLid]) {
             try {
                 await this.#sock.presenceSubscribe(jid);
@@ -325,13 +336,17 @@ export class VoipClient {
         const callId = ("00" + randomBytes(16).toString("hex").slice(2)).toUpperCase();
         const call = new ActiveCall(callId, this.#engine, durationMs);
         call._audioSource = audioSource;
+        call._videoEnabled = isVideo;
         this.#activeCall = call;
+        if (isVideo) {
+            this.#engine.enableVideoAbProps();
+        }
         this.#engine.startCall({
             peerJid: peerLid,
             peerPn: targetPnJid,
             peerList: deviceList,
             callId,
-            isVideo: false,
+            isVideo,
             isLidCall: true,
             isFromDialer: false,
             extraData: tcToken,

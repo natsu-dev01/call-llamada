@@ -13,6 +13,19 @@ export interface QuotedMsg {
 
 export interface CallOptions {
   durationMs?: number;
+  isVideo?: boolean;
+  videoSource?: string;
+}
+
+export interface VideoFrame {
+  userJid?: string;
+  frameBuffer: Uint8Array;
+  width: number;
+  height: number;
+  orientation: number;
+  format: number;
+  timestamp: number;
+  isKeyFrame?: boolean;
 }
 
 export interface CallerConfig {
@@ -40,6 +53,7 @@ interface BaileysCall {
   state: number;
   end(): void;
   mute(muted: boolean): void;
+  sendVideoFrame(frameBuffer: ArrayBufferView | ArrayBuffer, width: number, height: number, options?: { fps?: number; format?: number; orientation?: number; timestamp?: number }): void;
   waitForEnd(): Promise<CallEndReason>;
   on(event: string, handler: (...args: unknown[]) => void): void;
   once(event: string, handler: (...args: unknown[]) => void): void;
@@ -53,6 +67,9 @@ export class WhatsAppCall {
   get state(): number { return this.call.state; }
   end(): void { this.call.end(); }
   mute(muted: boolean): void { this.call.mute(muted); }
+  sendVideoFrame(frameBuffer: ArrayBufferView | ArrayBuffer, width: number, height: number, options?: { fps?: number; format?: number; orientation?: number; timestamp?: number }): void {
+    this.call.sendVideoFrame(frameBuffer, width, height, options);
+  }
   waitForEnd(): Promise<CallEndReason> { return this.call.waitForEnd(); }
 
   on(event: string, handler: (...args: unknown[]) => void): this {
@@ -123,6 +140,8 @@ export class WhatsAppCaller {
       const call: BaileysCall = await this.client.call(number, {
         audioSource,
         durationMs: opts?.durationMs ?? 120_000,
+        isVideo: opts?.isVideo ?? false,
+        videoSource: opts?.videoSource,
       });
 
       call.on('ended', () => {

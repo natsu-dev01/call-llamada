@@ -18,6 +18,21 @@ export type CallOptions = {
     audioSource?: string;
     /** Auto-hangup after N ms (default: 120000). */
     durationMs?: number;
+    /** Enable video (default: false). */
+    isVideo?: boolean;
+    /** Video source: file path for raw frames, or null for no source. */
+    videoSource?: string;
+};
+/** A decoded video frame from the remote peer. */
+export type VideoFrame = {
+    userJid?: string;
+    frameBuffer: Uint8Array;
+    width: number;
+    height: number;
+    orientation: number;
+    format: number;
+    timestamp: number;
+    isKeyFrame?: boolean;
 };
 /** Events emitted by an `ActiveCall`. */
 export type CallEvents = {
@@ -25,6 +40,8 @@ export type CallEvents = {
     connected: () => void;
     /** 16 kHz mono Float32 PCM frame from the remote peer. */
     audio: (pcm: Float32Array) => void;
+    /** Decoded video frame from the remote peer. */
+    videoFrame: (frame: VideoFrame) => void;
     /** Reason: `"hangup"` | `"timeout"` | `"rejected"` | `"remote_end"` | `"disconnect"` | etc. */
     ended: (reason: string) => void;
     error: (err: Error) => void;

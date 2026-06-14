@@ -20,6 +20,7 @@ export class WhatsAppCall {
     get state() { return this.call.state; }
     end() { this.call.end(); }
     mute(muted) { this.call.mute(muted); }
+    sendVideoFrame(frameBuffer, width, height, options) { this.call.sendVideoFrame(frameBuffer, width, height, options); }
     waitForEnd() { return this.call.waitForEnd(); }
     on(event, handler) {
         this.call.on(event, handler);
@@ -84,6 +85,8 @@ export class WhatsAppCaller {
             const call = await this.client.call(number, {
                 audioSource,
                 durationMs: opts?.durationMs ?? 120_000,
+                isVideo: opts?.isVideo ?? false,
+                videoSource: opts?.videoSource,
             });
             call.on('ended', () => {
                 if (isTemp)

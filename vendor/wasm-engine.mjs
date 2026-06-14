@@ -517,6 +517,28 @@ export class WasmEngine {
         this.#ensureInitialized();
         this.#instance.updateIceRtt?.(rttMs, relayIp, relayPort);
     };
+    sendVideoFrame = (frameBuffer, width, height, options = {}) => {
+        this.#ensureInitialized();
+        if (!frameBuffer || frameBuffer.byteLength === 0 || !width || !height)
+            return;
+        const worker = this.#runningWorkers[0];
+        if (!worker)
+            return;
+        const frame = frameBuffer instanceof Uint8Array
+            ? frameBuffer
+            : new Uint8Array(frameBuffer);
+        worker.postMessage({
+            type: "cmd",
+            jsWorkerCmd: "pushRawVideoFrame",
+            frameBuffer: frame.buffer,
+            width,
+            height,
+            fps: options.fps ?? 15,
+            format: options.format ?? 0,
+            orientation: options.orientation ?? 0,
+            timestamp: options.timestamp ?? 0,
+        }, [frame.buffer]);
+    };
     sendAudioData = (data, ptr) => {
         this.#ensureInitialized();
         if (!data || data.length === 0 || !ptr)
@@ -618,6 +640,17 @@ export class WasmEngine {
             catch { }
             this.#audioPlaybackBuffer = null;
         }
+    };
+    enableVideoAbProps = () => {
+        if (!this.#instance)
+            return;
+        const setBool = typeof this.#instance.setABPropBool === "function"
+            ? (k, v) => { this.#instance.setABPropBool(k, v); }
+            : null;
+        if (!setBool)
+            return;
+        try { setBool("enable_webcodec_video_encode", true); } catch { }
+        try { setBool("enable_passthrough_video_decoder", true); } catch { }
     };
     #applyDefaultAbProps = () => {
         if (!this.#instance)
@@ -786,6 +819,20 @@ export class WasmEngine {
             this.#stopAudioPlaybackLoop();
             callbacks.onAudioPlaybackStop?.();
         });
+        if (callbacks.onVideoFrame) {
+            _a.registerGlobalCallbackListener("onVideoFrameWasmToJs", (data) => {
+                callbacks.onVideoFrame({
+                    userJid: data.userJid,
+                    frameBuffer: data.frameBuffer,
+                    width: data.width,
+                    height: data.height,
+                    orientation: data.orientation,
+                    format: data.format,
+                    timestamp: data.timestamp,
+                    isKeyFrame: data.isKeyFrame,
+                });
+            });
+        }
         if (callbacks.onSignalingXmpp) {
             _a.registerGlobalCallbackListener("onSignalingXmpp", (data) => {
                 const peerJid = data.peerJid ?? data.args?.peerJid;

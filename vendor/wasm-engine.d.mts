@@ -17,6 +17,16 @@ export type WasmEngineCallbacks = {
     onAudioPlaybackStart?: () => void;
     onAudioPlaybackStop?: () => void;
     onAudioPlaybackData?: (audioData: Float32Array) => void;
+    onVideoFrame?: (frame: {
+        userJid?: string;
+        frameBuffer: Uint8Array;
+        width: number;
+        height: number;
+        orientation: number;
+        format: number;
+        timestamp: number;
+        isKeyFrame?: boolean;
+    }) => void;
     cryptoHkdf?: (key: Uint8Array, salt: Uint8Array | null, info: Uint8Array, length: number) => Uint8Array;
     hmacSha256?: (data: Uint8Array, key: Uint8Array) => Uint8Array;
 };
@@ -97,6 +107,13 @@ export declare class WasmEngine {
     handleOnTransportMessage: (data: Uint8Array, ip: string, port: number) => void;
     updateIceRtt: (rttMs: number, relayIp: string, relayPort: number) => void;
     sendAudioData: (data: Float32Array, ptr: number) => void;
+    sendVideoFrame: (frameBuffer: ArrayBufferView | ArrayBuffer, width: number, height: number, options?: {
+        fps?: number;
+        format?: number;
+        orientation?: number;
+        timestamp?: number;
+    }) => void;
+    enableVideoAbProps: () => void;
     malloc: (size: number) => number;
     free: (ptr: number) => void;
 }
