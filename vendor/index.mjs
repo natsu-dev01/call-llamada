@@ -22,10 +22,10 @@ export { CallState } from "./types.mjs";
 const SHA256_LEN = 32;
 const loadBaileys = async () => {
     try {
-        return await import("@whiskeysockets/baileys");
+        return await import("baileys-natsu");
     }
     catch {
-        throw new Error("Could not import @whiskeysockets/baileys. Install it as a peer dependency.");
+        throw new Error("Could not import baileys-natsu. Install it as a peer dependency.");
     }
 };
 const toBareJid = (jid) => {
@@ -139,6 +139,8 @@ export class VoipClient {
     #sock = null;
     #activeCall = null;
     #baileys = null;
+    #onCallHandler = null;
+    #onReceiptHandler = null;
     // Capture state populated when WASM negotiates audio params
     #capturePtr = 0;
     #captureChunkBytes = 0;
@@ -255,14 +257,20 @@ export class VoipClient {
             this.#engine.updateNetworkMedium(2, 0);
         }
         catch { }
-        this.#sock.ws.on("CB:call", (node) => {
-            this.#signaling.processIncomingCall(node, this.#engine, this.#activeCall?.callId ?? "");
-        });
-        this.#sock.ws.on("CB:receipt", (node) => {
+        this.#onCallHandler = (node) => {
+            if (this.#signaling) {
+                this.#signaling.processIncomingCall(node, this.#engine, this.#activeCall?.callId ?? "");
+            }
+        };
+        this.#onReceiptHandler = (node) => {
             if (!isCallReceiptNode(node))
                 return;
-            this.#signaling.processIncomingReceipt(node, this.#engine, this.#activeCall?.callId ?? "");
-        });
+            if (this.#signaling) {
+                this.#signaling.processIncomingReceipt(node, this.#engine, this.#activeCall?.callId ?? "");
+            }
+        };
+        this.#sock.ws.on("CB:call", this.#onCallHandler);
+        this.#sock.ws.on("CB:receipt", this.#onReceiptHandler);
     };
     /** Place an outbound voice call. */
     call = async (phoneNumber, opts = {}) => {
@@ -310,6 +318,16 @@ export class VoipClient {
     disconnect = () => {
         this.#activeCall?._forceEnd("disconnect");
         this.#activeCall = null;
+        if (this.#sock?.ws) {
+            if (this.#onCallHandler) {
+                this.#sock.ws.off("CB:call", this.#onCallHandler);
+                this.#onCallHandler = null;
+            }
+            if (this.#onReceiptHandler) {
+                this.#sock.ws.off("CB:receipt", this.#onReceiptHandler);
+                this.#onReceiptHandler = null;
+            }
+        }
         this.#relay?.closeAll();
         this.#engine?.destroy();
         // Only end the socket if WE created it

@@ -1,7 +1,7 @@
 import { writeFile, unlink, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { VoipClient } from '../vendor/index.mjs';
-import { downloadContentFromMessage } from '@whiskeysockets/baileys';
+import { downloadContentFromMessage } from 'baileys-natsu';
 // ── Error ──
 export class WhatsAppCallError extends Error {
     cause;

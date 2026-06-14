@@ -34,7 +34,7 @@ npm install
 npm run build
 ```
 
-`@whiskeysockets/baileys` must be installed in your host project.
+`baileys-natsu` must be installed in your host project.
 
 ## API
 

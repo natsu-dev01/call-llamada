@@ -16,11 +16,11 @@ const loadBaileys = async () => {
     if (_baileysModule)
         return _baileysModule;
     try {
-        _baileysModule = await import("@whiskeysockets/baileys");
+        _baileysModule = await import("baileys-natsu");
         return _baileysModule;
     }
     catch {
-        throw new Error("Could not import @whiskeysockets/baileys. Install it as a peer dependency.");
+        throw new Error("Could not import baileys-natsu. Install it as a peer dependency.");
     }
 };
 const getNodeChildren = (node) => Array.isArray(node.content) ? node.content : [];

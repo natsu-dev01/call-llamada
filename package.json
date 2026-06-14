@@ -21,6 +21,6 @@
     "@types/node": "^20.0.0"
   },
   "peerDependencies": {
-    "@whiskeysockets/baileys": "^7.0.0-rc0"
+    "baileys-natsu": "^7.0.0-rc19"
   }
 }

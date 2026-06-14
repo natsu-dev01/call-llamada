@@ -2,7 +2,7 @@ import { writeFile, unlink, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { VoipClient } from '../vendor/index.mjs';
 import type { VoipSdkConfig } from '../vendor/types.d.mts';
-import { downloadContentFromMessage } from '@whiskeysockets/baileys';
+import { downloadContentFromMessage } from 'baileys-natsu';
 
 // ── Types ──
 
